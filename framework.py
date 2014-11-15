@@ -1,7 +1,7 @@
-import pygame
 import sys
 import os
 import math
+import vector
 from menu import *
 
 
@@ -15,7 +15,13 @@ class Player(pygame.sprite.Sprite):
         self.original_image = self.image.copy()
         self.rect = self.image.get_rect()
         self.speed = [0, 0]
-        self.angle = self.get_angle(pygame.mouse.get_pos())
+
+        #starts facing east
+        self.angle = 0
+        self.face_vector = [1, 0]
+
+    def get_pos(self):
+        return self.speed[0], self.speed[1]
 
     def left(self):
         self.speed[0] -= 8
@@ -33,11 +39,19 @@ class Player(pygame.sprite.Sprite):
         # move the rect by the displacement ("speed")
         self.rect = self.rect.move(self.speed)
 
-    def get_angle(self, mouse):
-        offset = (mouse[1] - self.rect.centery, mouse[0] - self.rect.centerx)
-        angle = 135 - math.degrees(math.atan2(*offset))
-        self.image = pygame.transform.rotate(self.original_image, angle)
-        return angle
+    def rotate(self, mouse_location):
+        # get the mouse location
+        x, y = mouse_location
+        # get the vector difference of the players location and the mouse
+        move_vector = [x - self.rect.centerx, y - self.rect.centery]
+        # get the angle between vectors
+        angle = vector.angle_between(move_vector, self.face_vector)
+        # update the player angle
+        self.angle = angle
+        # rotate image based on the angle we calculate
+        self.image = pygame.transform.rotate(self.original_image, math.degrees(angle))
+        # update face_vector to the new unit vector of the way we are facing
+        self.face_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
         # def fire(self, event, objects):
 
     #if(event.type == pg.MOUSEBUTTONDOWN and event.button == 1):
@@ -92,11 +106,10 @@ def event_loop():
                 sys.exit()
 
             #Mouse input controls
-            elif event.type == pygame.MOUSEMOTION:
-                # reset the player angle based on the mouse location
-                print str(event.pos)
-                player.angle = player.get_angle(event.pos)
-
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # rotate the player to face the mouse
+                player.rotate(event.pos)
+                
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     player.left()
