@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import math
 from menu import *
 
 
@@ -9,12 +10,12 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         # call the parent class (Sprite) constructor
         pygame.sprite.Sprite.__init__(self)
-        # create 50px by 50px surface
-        self.image = pygame.Surface((50, 50))
-        # color the surface cyan
-        self.image.fill((0, 205, 205))
+        #load player pistol PNG
+        self.image = pygame.image.load(os.path.join('images', 'player_pistol.png'))
+        self.original_image = self.image.copy()
         self.rect = self.image.get_rect()
         self.speed = [0, 0]
+        self.angle = self.get_angle(pygame.mouse.get_pos())
 
     def left(self):
         self.speed[0] -= 8
@@ -31,6 +32,18 @@ class Player(pygame.sprite.Sprite):
     def move(self):
         # move the rect by the displacement ("speed")
         self.rect = self.rect.move(self.speed)
+
+    def get_angle(self, mouse):
+        offset = (mouse[1] - self.rect.centery, mouse[0] - self.rect.centerx)
+        angle = 135 - math.degrees(math.atan2(*offset))
+        self.image = pygame.transform.rotate(self.original_image, angle)
+        return angle
+        # def fire(self, event, objects):
+
+    #if(event.type == pg.MOUSEBUTTONDOWN and event.button == 1):
+    # add bullet
+    #if(event.type == pg.MOUSEMOTION):
+    #self.get_angle(event.pos)
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -49,14 +62,14 @@ def event_loop():
     screen_width = screen.get_width()
     screen_height = screen.get_height()
     # set up font
-    basicFont = pygame.font.SysFont(None, 48)
+    basic_font = pygame.font.SysFont(None, 48)
     # initialize a clock
     clock = pygame.time.Clock()
     # initialize the score counter
     score = 0
     # initialize the enemy speed
     enemy_speed = [6, 6]
-    
+
     # initialize the player and the enemy
     player = Player()
     enemy = Enemy()
@@ -78,6 +91,12 @@ def event_loop():
             if event.type == pygame.QUIT:
                 sys.exit()
 
+            #Mouse input controls
+            elif event.type == pygame.MOUSEMOTION:
+                # reset the player angle based on the mouse location
+                print str(event.pos)
+                player.angle = player.get_angle(event.pos)
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     player.left()
@@ -97,7 +116,7 @@ def event_loop():
                     player.down()
                 elif event.key == pygame.K_DOWN:
                     player.up()
-        
+
         # call the move function for the player
         player.move()
 
@@ -127,17 +146,23 @@ def event_loop():
         if pygame.sprite.spritecollide(player, enemy_list, False):
             score += 1
 
-        # black background
-        screen.fill((0, 0, 0))
+        #draw_background define
+        def draw_background(background, x, y):
+            screen.blit(background, [x, y])
+
+        # draw background
+        # screen.fill((0, 0, 0))
+        background = pygame.image.load(os.path.join('images', 'ground.png'))
+        draw_background(background, 0, 0)
 
         # set up the score text
-        text = basicFont.render('Score: %d' % score, True, (255, 255, 255))
-        textRect = text.get_rect()
-        textRect.centerx = screen_rect.centerx
-        textRect.centery = screen_rect.centery
-        
+        text = basic_font.render('Score: %d' % score, True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.centerx = screen_rect.centerx
+        text_rect.centery = screen_rect.centery
+
         # draw the text onto the surface
-        screen.blit(text, textRect)
+        screen.blit(text, text_rect)
 
         # draw the player and enemy sprites to the screen
         sprite_list.draw(screen)
@@ -148,6 +173,7 @@ def event_loop():
         # limit to 45 FPS
         clock.tick(45)
 
+
 def main():
     # initialize pygame
     pygame.init()
@@ -157,13 +183,13 @@ def main():
     screen = pygame.display.set_mode(size)
 
     # set the window title
-    pygame.display.set_caption("Example Framework")
+    pygame.display.set_caption("Rico-ja")
 
     # create the menu
     menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
-                 [('Start Game',   1, None),
+                 [('Start Game', 1, None),
                   ('Other Option', 2, None),
-                  ('Exit',         3, None)])
+                  ('Exit', 3, None)])
     # center the menu
     menu.set_center(True, True)
     menu.set_alignment('center', 'center')
@@ -180,7 +206,7 @@ def main():
         # check if the state has changed, if it has, then post a user event to
         # the queue to force the menu to be shown at least once
         if prev_state != state:
-            pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
+            pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key=0))
             prev_state = state
 
         # get the next event
@@ -210,6 +236,7 @@ def main():
 
             # update the screen
             pygame.display.update(rect_list)
+
 
 if __name__ == '__main__':
     main()
