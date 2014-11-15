@@ -3,7 +3,8 @@ import os
 import math
 import vector
 from menu import *
-
+# Global Bullet list
+bullet_list = pygame.sprite.Group()
 
 class Player(pygame.sprite.Sprite):
     # constructor for this class
@@ -41,20 +42,26 @@ class Player(pygame.sprite.Sprite):
         x, y = mouse_location
         # get the vector difference of the players location and the mouse
         move_vector = [x - self.rect.centerx, y - self.rect.centery]
+        self.angle = math.degrees(math.atan2(*move_vector)) - 90
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
         # get the angle between vectors
-        angle = vector.angle_between(move_vector, self.face_vector)
+    #    angle = vector.angle_between(move_vector, self.face_vector)
         # update the player angle
-        self.angle = angle
+    #    self.angle = angle
         # rotate image based on the angle we calculate
-        self.image = pygame.transform.rotate(self.image, math.degrees(angle))
+    #    self.image = pygame.transform.rotate(self.image, math.degrees(angle))
         # update face_vector to the new unit vector of the way we are facing
-        self.face_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
+    #    self.face_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
         # def fire(self, event, objects):
 
-    #if(event.type == pg.MOUSEBUTTONDOWN and event.button == 1):
-    # add bullet
-    #if(event.type == pg.MOUSEMOTION):
-    #self.get_angle(event.pos)
+    def fire(self):
+        bullet = Bullet()
+        bullet.rect.x = self.rect.x
+        bullet.rect.y = self.rect.y
+        bullet.speed[0] = math.cos(self.angle)*bullet.base_speed
+        bullet.speed[1] = math.sin(self.angle)*bullet.base_speed
+        bullet_list.add(bullet)
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -65,6 +72,18 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = 0, 0
 
+
+        #Bullet sprite
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([5, 15])
+        self.image.fill(WHITE)
+        self.speed = [0,0]
+        self.base_speed = 10
+
+
+        self.rect = self.image.get_rect()
 
 def event_loop():
     # get the pygame screen and create some local vars
@@ -103,9 +122,11 @@ def event_loop():
                 sys.exit()
 
             #Mouse input controls
-            elif event.type == pygame.MOUSEMOTION:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 # rotate the player to face the mouse
                 player.rotate(event.pos)
+                player.fire()
+
                 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
@@ -126,6 +147,9 @@ def event_loop():
                     player.down()
                 elif event.key == pygame.K_DOWN:
                     player.up()
+
+            #elif event.type == pygame.MOUSEBUTTONDOWN:
+            #    player.fire()
 
         # call the move function for the player
         player.move()
@@ -149,6 +173,15 @@ def event_loop():
         # another way to move rects
         enemy.rect.x += enemy_speed[0]
         enemy.rect.y += enemy_speed[1]
+
+        for bullet in bullet_list:
+            if(bullet.rect.left < 0 or bullet.rect.right > screen_width):
+                bullet.speed[0] = -bullet.speed[0]
+            if(bullet.rect.top < 0 or bullet.rect.bottom > screen_height):
+                bullet.speed[1] = -bullet.speed[1]
+            #Move Bullet
+            bullet.rect.x += bullet.speed[0]
+            bullet.rect.y += bullet.speed[1]
 
         # detect all collisions between the player and enemy
         # but don't remove enemy after collisions
@@ -176,6 +209,7 @@ def event_loop():
 
         # draw the player and enemy sprites to the screen
         sprite_list.draw(screen)
+        bullet_list.draw(screen)
 
         # update the screen
         pygame.display.flip()
@@ -189,7 +223,7 @@ def main():
     pygame.init()
 
     # create the window
-    size = width, height = 360, 480
+    size = width, height = 718, 480
     screen = pygame.display.set_mode(size)
 
     # set the window title
