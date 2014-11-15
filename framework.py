@@ -20,9 +20,6 @@ class Player(pygame.sprite.Sprite):
         self.angle = 0
         self.face_vector = [1, 0]
 
-    def get_pos(self):
-        return self.speed[0], self.speed[1]
-
     def left(self):
         self.speed[0] -= 8
 
@@ -49,7 +46,7 @@ class Player(pygame.sprite.Sprite):
         # update the player angle
         self.angle = angle
         # rotate image based on the angle we calculate
-        self.image = pygame.transform.rotate(self.original_image, math.degrees(angle))
+        self.image = pygame.transform.rotate(self.image, math.degrees(angle))
         # update face_vector to the new unit vector of the way we are facing
         self.face_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
         # def fire(self, event, objects):
@@ -106,7 +103,7 @@ def event_loop():
                 sys.exit()
 
             #Mouse input controls
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEMOTION:
                 # rotate the player to face the mouse
                 player.rotate(event.pos)
                 
