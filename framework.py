@@ -45,15 +45,6 @@ class Player(pygame.sprite.Sprite):
         self.angle = math.degrees(math.atan2(*move_vector)) - 90
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        # get the angle between vectors
-    #    angle = vector.angle_between(move_vector, self.face_vector)
-        # update the player angle
-    #    self.angle = angle
-        # rotate image based on the angle we calculate
-    #    self.image = pygame.transform.rotate(self.image, math.degrees(angle))
-        # update face_vector to the new unit vector of the way we are facing
-    #    self.face_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
-        # def fire(self, event, objects):
 
     def fire(self):
         bullet = Bullet()
@@ -201,8 +192,8 @@ def event_loop():
         # set up the score text
         text = basic_font.render('Score: %d' % score, True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.centerx = screen_rect.centerx
-        text_rect.centery = screen_rect.centery
+        text_rect.x = screen_rect.x
+        text_rect.y = screen_rect.y
 
         # draw the text onto the surface
         screen.blit(text, text_rect)
