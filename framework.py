@@ -65,27 +65,25 @@ class Player(pygame.sprite.Sprite):
         x, y = mouse_location
         # get the vector difference of the players location and the mouse
         move_vector = [x - self.rect.centerx, y - self.rect.centery]
-        self.angle = math.degrees(math.atan2(*move_vector))
-        self.image = pygame.transform.rotate(self.original_image, self.angle-90)
+        self.angle = math.degrees(math.atan2(*move_vector)) - 90
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-    def fire(self):
+    def fire(self, mouse_location):
         bullet = Bullet()
-        #if 45 < self.angle < 135:
-        #    bullet.rect.x = self.rect.centerx+60
-        #    bullet.rect.y = self.rect.centery+60*math.sin(self.angle)
-        #elif 225 < self.angle < 315:
-        #    bullet.rect.x = self.rect.centerx-60
-        #    bullet.rect.y = self.rect.centery+60*math.sin(self.angle)
-        #else:
-        bullet.rect.x = self.rect.centerx+15
-        bullet.rect.y = self.rect.centery+15
-        bullet.speed[0] = math.cos(self.angle-90)*bullet.base_speed
-        bullet.speed[1] = math.sin(self.angle-90)*bullet.base_speed
+        start_x, start_y = Bullet.calculate_start(self, mouse_location)
+
+        bullet.rect.centerx = start_x
+        bullet.rect.centery = start_y
+        bullet.speed[0] = math.cos(math.radians(self.angle))*bullet.base_speed
+        print math.radians(self.angle)
+        bullet.speed[1] = -math.sin(math.radians(self.angle))*bullet.base_speed
+        print bullet.speed
         bullet_list.add(bullet)
 
     def death(self, score):
         game_over(score)
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
@@ -96,19 +94,34 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.topleft = 0, 0
 
 
-
-        #Bullet sprite
+# Bullet sprite
 class Bullet(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([5, 15])
+        self.image = pygame.Surface([5, 5])
         self.image.fill(WHITE)
         self.speed = [0,0]
         self.base_speed = 10
-
-
         self.rect = self.image.get_rect()
 
+    @staticmethod
+    def calculate_start(sprite, mouse_location):
+        mouse_x, mouse_y = mouse_location
+        sprite_center = [sprite.rect.centerx, sprite.rect.centery]
+        move_vector = [mouse_x - sprite.rect.centerx, mouse_y - sprite.rect.centery]
+        # normalize the move vector
+        unit_move_vector = [move_vector[0] / vector.length(move_vector), move_vector[1] / vector.length(move_vector)]
+        # calculate distance between the center of the player and the potential bullet start point
+        distance = vector.distance(sprite_center, [sprite_center[0] + unit_move_vector[0], sprite_center[1] + unit_move_vector[1]])
+        # One number above the radius of the circle circumscribing the player sprite
+        radius = hitbox_radius = math.ceil((sprite.image.get_width()/2) * math.sqrt(2))
+        # ensure that the bullet starts outside of the player hitbox
+        while distance < hitbox_radius:
+            move_vector = vector.multiply_scalar(unit_move_vector, radius)
+            distance = vector.distance(sprite_center, [sprite_center[0] + move_vector[0], sprite_center[1] + move_vector[1]])
+            radius += 1  # raise me to lower iterations but possibly increase start distance
+
+        return sprite_center[0] + move_vector[0], sprite_center[1] + move_vector[1]
 
 # Game Over loop
 def game_over(score):
@@ -189,7 +202,6 @@ def event_loop():
                 player.rotate(event.pos)
                 #player.fire()
 
-                
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     player.left()
@@ -211,7 +223,7 @@ def event_loop():
                     player.up()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                player.fire()
+                player.fire(event.pos)
 
         # call the move function for the player
         player.move()
