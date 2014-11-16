@@ -477,6 +477,7 @@ def event_loop():
         sprite_list.draw(screen)
         bullet_list.draw(screen)
         enemy_list.draw(screen)
+        shovel_list.draw(screen)
 
         # update the screen
         pygame.display.flip()
