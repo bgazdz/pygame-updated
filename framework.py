@@ -6,6 +6,8 @@ import pygame
 from menu import *
 # Global Bullet list
 bullet_list = pygame.sprite.Group()
+# Global enemy list
+enemy_list = pygame.sprite.Group()
 
 
 #For movement between Menu, game, and death screens
@@ -34,6 +36,8 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join('images', 'player_pistol.png'))
         self.original_image = self.image.copy()
         self.rect = self.image.get_rect()
+        self.rect.x = 718/2
+        self.rect.y = 240
         self.speed = [0, 0]
 
         #starts facing east
@@ -61,16 +65,23 @@ class Player(pygame.sprite.Sprite):
         x, y = mouse_location
         # get the vector difference of the players location and the mouse
         move_vector = [x - self.rect.centerx, y - self.rect.centery]
-        self.angle = math.degrees(math.atan2(*move_vector)) - 90
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.angle = math.degrees(math.atan2(*move_vector))
+        self.image = pygame.transform.rotate(self.original_image, self.angle-90)
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def fire(self):
         bullet = Bullet()
-        bullet.rect.x = self.rect.x
-        bullet.rect.y = self.rect.y
-        bullet.speed[0] = math.cos(self.angle)*bullet.base_speed
-        bullet.speed[1] = math.sin(self.angle)*bullet.base_speed
+        #if 45 < self.angle < 135:
+        #    bullet.rect.x = self.rect.centerx+60
+        #    bullet.rect.y = self.rect.centery+60*math.sin(self.angle)
+        #elif 225 < self.angle < 315:
+        #    bullet.rect.x = self.rect.centerx-60
+        #    bullet.rect.y = self.rect.centery+60*math.sin(self.angle)
+        #else:
+        bullet.rect.x = self.rect.centerx+15
+        bullet.rect.y = self.rect.centery+15
+        bullet.speed[0] = math.cos(self.angle-90)*bullet.base_speed
+        bullet.speed[1] = math.sin(self.angle-90)*bullet.base_speed
         bullet_list.add(bullet)
 
     def death(self, score):
@@ -83,6 +94,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join('images', 'ball.png'))
         self.rect = self.image.get_rect()
         self.rect.topleft = 0, 0
+
 
 
         #Bullet sprite
@@ -160,10 +172,8 @@ def event_loop():
     # so we can draw to the screen
     sprite_list = pygame.sprite.Group()
     sprite_list.add(player)
-    sprite_list.add(enemy)
 
     # create a sprite group for enemies only to detect collisions
-    enemy_list = pygame.sprite.Group()
     enemy_list.add(enemy)
 
     # main game loop
@@ -238,11 +248,18 @@ def event_loop():
         # detect all collisions between the player and enemy
         # but don't remove enemy after collisions
         # increment score if there was a collision
-        if pygame.sprite.spritecollide(player, enemy_list, False):
-            score += 1
+        for e in enemy_list:
+            if pygame.sprite.spritecollide(e, bullet_list, False):
+                score += 1
+                enemy_list.remove(e)
+
 
         if pygame.sprite.spritecollide(player, bullet_list, False):
             player.death(score)
+
+        if pygame.sprite.spritecollide(player, enemy_list, False):
+            player.death(score)
+
         #draw_background define
         def draw_background(background, x, y):
             screen.blit(background, [x, y])
@@ -264,6 +281,7 @@ def event_loop():
         # draw the player and enemy sprites to the screen
         sprite_list.draw(screen)
         bullet_list.draw(screen)
+        enemy_list.draw(screen)
 
         # update the screen
         pygame.display.flip()
