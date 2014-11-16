@@ -10,8 +10,16 @@ from menu import *
 bullet_list = pygame.sprite.Group()
 # Global enemy list
 enemy_list = pygame.sprite.Group()
+#Globbal shovel list
+shovel_list = pygame.sprite.Group()
 # Global bullet size
 bullet_size = 0
+#global enemy count
+enemy_count = 0
+#Global shovel amounts on screen (can only have one)
+shovel = 0
+#Global score
+score = 0
 
 #For movement between Menu, game, and death screens
 class GameEngine:
@@ -85,8 +93,41 @@ class Player(pygame.sprite.Sprite):
             bullet_list.add(bullet)
             bullet_size += 1
 
-    def death(self, score):
-        game_over(score)
+    def death(self):
+        game_over()
+
+    #Weapon action
+    def shovel(self):
+        shovel_list.empty()
+        enemy_list.empty()
+        bullet_list.empty()
+        global enemy_count
+        global bullet_size
+        global score
+        global shovel
+        score += enemy_count
+        enemy_count = 0
+        bullet_size = 0
+        shovel = 0
+        # set up the score text
+        # set up font
+        basic_font = pygame.font.SysFont(None, 100)
+        text = basic_font.render('BOOM!', True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.x = 300
+        text_rect.y = 200
+
+        # draw the text onto the surface
+        screen = pygame.display.get_surface()
+        screen_rect = screen.get_rect()
+        screen_width = screen.get_width()
+        screen_height = screen.get_height()
+        count = 0
+        while(count < 100):
+            screen.blit(text, text_rect)
+            count += 1
+            # update the screen
+            pygame.display.flip()
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -127,6 +168,15 @@ class Bullet(pygame.sprite.Sprite):
 
         return sprite_center[0] + move_vector[0], sprite_center[1] + move_vector[1]
 
+# Shovel Sprite
+class Shovel(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        # load the PNG
+        self.image = pygame.image.load(os.path.join('images', 'shovel.png'))
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0, 718)
+        self.rect.y = random.randint(0, 480)
 
 def read_high_scores():
     if not os.path.isfile('high_scores'):
@@ -143,8 +193,8 @@ def read_high_scores():
     return scores
 
 
-def new_high_score(score):
-
+def new_high_score():
+    global score
     if not os.path.isfile('high_scores'):
         print 'creating file'
         f = open('high_scores', 'w')
@@ -173,9 +223,11 @@ def new_high_score(score):
 
 
 # Game Over loop
-def game_over(score):
+def game_over():
+    global score
     bullet_list.empty()
     enemy_list.empty()
+    shovel_list.empty()
     screen = pygame.display.get_surface()
     screen_rect = screen.get_rect()
     screen_width = screen.get_width()
@@ -184,7 +236,7 @@ def game_over(score):
     basic_font = pygame.font.SysFont(None, 48)
     # initialize a clock
     clock = pygame.time.Clock()
-    new_high_score(score)
+    new_high_score()
     #Death Loop
     while 1:
         # handle input
@@ -252,7 +304,8 @@ def event_loop():
     clock = pygame.time.Clock()
 
     # initialize score
-    score = 0
+    global score
+    global enemy_count
 
     # Global bullet_size
     global bullet_size
@@ -260,7 +313,11 @@ def event_loop():
     # initialize the player and the enemy
     player = Player()
     enemy = Enemy()
-    enemy_size = 1
+    enemy_count+=1
+
+    #initialize weapon amounts
+    global shovel
+    shovel = 0
 
     # create a sprite group for the player and enemy
     # so we can draw to the screen
@@ -338,13 +395,13 @@ def event_loop():
             return placement
         # Add new enemy randomly until max number of enemies
         if(random.randint(0,10) == 5):
-            if(enemy_size < score%10 + 3):
+            if(enemy_count < score%10 + 3):
                 newEnemy = Enemy()
                 placement = newEnemyPlacement()
                 newEnemy.rect.x = placement[0]
                 newEnemy.rect.y = placement[1]
                 enemy_list.add(newEnemy)
-                enemy_size += 1
+                enemy_count += 1
 
         # Get direction for enemy movement and move enemy
         def Tracking(enemy, player):
@@ -372,17 +429,31 @@ def event_loop():
             bullet.rect.x += bullet.speed[0]
             bullet.rect.y += bullet.speed[1]
 
+
         # detect all collisions
         if pygame.sprite.groupcollide(enemy_list, bullet_list, True, True, None):
             score += 1
-            enemy_size -= 1
+            enemy_count -= 1
             bullet_size -= 1
 
         if pygame.sprite.spritecollide(player, bullet_list, False):
-            player.death(score)
+            player.death()
 
         if pygame.sprite.spritecollide(player, enemy_list, False):
-            player.death(score)
+            player.death()
+
+        if pygame.sprite.spritecollide(player, shovel_list, False):
+            player.shovel()
+
+        # Draw super awesome shovel
+        def draw_shovel():
+            shovel = Shovel()
+            shovel_list.add(shovel)
+
+        # Super awesome shovel spawning
+        if (score%25 == 0) and (score > 0) and (shovel == 0):
+            shovel = 1
+            draw_shovel()
 
         #draw_background define
         def draw_background(background, x, y):
