@@ -143,7 +143,7 @@ class Enemy(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([5, 5])
+        self.image = pygame.Surface([10, 10])
         self.image.fill(WHITE)
         self.speed = [0,0]
         self.base_speed = 10
