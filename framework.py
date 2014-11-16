@@ -2,8 +2,8 @@ import sys
 import os
 import math
 import vector
-import pygame
 import random
+import os
 random.seed()
 from menu import *
 # Global Bullet list
@@ -25,6 +25,7 @@ class GameEngine:
         # set the window title
         pygame.display.set_caption("Rico-ja")
         states = [main(), event_loop(), game_over()]
+
 
     def run(self):
         while(True):
@@ -126,6 +127,51 @@ class Bullet(pygame.sprite.Sprite):
 
         return sprite_center[0] + move_vector[0], sprite_center[1] + move_vector[1]
 
+
+def read_high_scores():
+    if not os.path.isfile('high_scores'):
+        f = open('high_scores', 'w')
+        for i in range(0, 5):
+            f.write('0\n')
+        f.close()
+
+    f = open('high_scores', 'r')
+    scores = []
+    for score in f.readlines():
+        scores.append(score)
+    f.close()
+    return scores
+
+
+def new_high_score(score):
+
+    if not os.path.isfile('high_scores'):
+        print 'creating file'
+        f = open('high_scores', 'w')
+        for i in range(0, 5):
+            f.write('0\n')
+        f.close()
+
+    f = open('high_scores', 'r')
+    high_scores = []
+    for high_score in f.readlines():
+        high_scores.append(int(high_score.rstrip('\n')))
+    f.close()
+    f = open('high_scores', 'w')
+    for i in range(0, len(high_scores)):
+        if score > high_scores[i]:
+            high_scores.insert(i, score)
+            break
+    # keep the top 5 high scores only
+    if len(high_scores) > 5:
+        del high_scores[-1]
+
+    # write the scores back to disk
+    for score in high_scores:
+        f.write(str(score) + '\n')
+    f.close()
+
+
 # Game Over loop
 def game_over(score):
     bullet_list.empty()
@@ -138,7 +184,7 @@ def game_over(score):
     basic_font = pygame.font.SysFont(None, 48)
     # initialize a clock
     clock = pygame.time.Clock()
-
+    new_high_score(score)
     #Death Loop
     while 1:
         # handle input
@@ -163,6 +209,36 @@ def game_over(score):
         screen.blit(text, text_rect)
         # update the screen
         pygame.display.flip()
+
+
+def display_high_scores():
+
+    # get the pygame screen and create some local vars
+    screen = pygame.display.get_surface()
+    screen_width = screen.get_width()
+    screen_height = screen.get_height()
+    # set up font
+    basic_font = pygame.font.SysFont(None, 32)
+    # initialize a clock
+    scores = read_high_scores()
+    menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
+                 [('Back', 1, None)])
+    # center the menu
+    menu.set_center(False, False)
+    menu.set_alignment('bottom', 'center')
+    offset = -50
+    rank = 1
+    for score in scores:
+        text = basic_font.render(str(rank) + ': ' + score.rstrip('\n'), True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.x = screen_width / 2 + 80
+        text_rect.y = screen_height / 2 + offset
+        offset += 20
+        rank += 1
+        # draw the text onto the surface
+        screen.blit(text, text_rect)
+    pygame.display.flip()
+
 
 def event_loop():
     # get the pygame screen and create some local vars
@@ -288,9 +364,9 @@ def event_loop():
 
 
         for bullet in bullet_list:
-            if(bullet.rect.left < 0 or bullet.rect.right > screen_width):
+            if bullet.rect.left < 0 or bullet.rect.right > screen_width :
                 bullet.speed[0] = -bullet.speed[0]
-            if(bullet.rect.top < 0 or bullet.rect.bottom > screen_height):
+            if bullet.rect.top < 0 or bullet.rect.bottom > screen_height :
                 bullet.speed[1] = -bullet.speed[1]
             #Move Bullet
             bullet.rect.x += bullet.speed[0]
@@ -368,6 +444,7 @@ def main():
 
     #pygame.display.update(rect_list)
 
+    high_scores_displayed = False
     while 1:
         pygame.display.set_caption("Rico-ja")
         # check if the state has changed, if it has, then post a user event to
@@ -388,8 +465,9 @@ def main():
                 # start the game
                 event_loop()
             elif state == 2:
-                # just to demonstrate how to make other options
-                pygame.display.set_caption("High Scores")
+                if not high_scores_displayed:
+                    display_high_scores()
+                    high_scores_displayed = True
                 state = 0
             else:
                 # exit the game and program
