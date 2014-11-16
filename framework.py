@@ -3,12 +3,15 @@ import os
 import math
 import vector
 import pygame
+import random
+random.seed()
 from menu import *
 # Global Bullet list
 bullet_list = pygame.sprite.Group()
 # Global enemy list
 enemy_list = pygame.sprite.Group()
-
+# Global bullet size
+bullet_size = 0
 
 #For movement between Menu, game, and death screens
 class GameEngine:
@@ -70,16 +73,16 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def fire(self, mouse_location):
-        bullet = Bullet()
-        start_x, start_y = Bullet.calculate_start(self, mouse_location)
-
-        bullet.rect.centerx = start_x
-        bullet.rect.centery = start_y
-        bullet.speed[0] = math.cos(math.radians(self.angle))*bullet.base_speed
-        print math.radians(self.angle)
-        bullet.speed[1] = -math.sin(math.radians(self.angle))*bullet.base_speed
-        print bullet.speed
-        bullet_list.add(bullet)
+        global bullet_size
+        if bullet_size < 20:
+            bullet = Bullet()
+            start_x, start_y = Bullet.calculate_start(self, mouse_location)
+            bullet.rect.centerx = start_x
+            bullet.rect.centery = start_y
+            bullet.speed[0] = math.cos(math.radians(self.angle))*bullet.base_speed
+            bullet.speed[1] = -math.sin(math.radians(self.angle))*bullet.base_speed
+            bullet_list.add(bullet)
+            bullet_size += 1
 
     def death(self, score):
         game_over(score)
@@ -126,6 +129,7 @@ class Bullet(pygame.sprite.Sprite):
 # Game Over loop
 def game_over(score):
     bullet_list.empty()
+    enemy_list.empty()
     screen = pygame.display.get_surface()
     screen_rect = screen.get_rect()
     screen_width = screen.get_width()
@@ -174,12 +178,13 @@ def event_loop():
     # initialize score
     score = 0
 
-    # initialize the enemy speed
-    enemy_speed = [6, 6]
+    # Global bullet_size
+    global bullet_size
 
     # initialize the player and the enemy
     player = Player()
     enemy = Enemy()
+    enemy_size = 1
 
     # create a sprite group for the player and enemy
     # so we can draw to the screen
@@ -238,15 +243,49 @@ def event_loop():
         if player.rect.bottom > screen_height:
             player.rect.bottom = screen_height
 
-        # reverse the movement direction if enemy goes out of bounds
-        if enemy.rect.left < 0 or enemy.rect.right > screen_width:
-            enemy_speed[0] = -enemy_speed[0]
-        if enemy.rect.top < 0 or enemy.rect.bottom > screen_height:
-            enemy_speed[1] = -enemy_speed[1]
+        # Places a new enemy off screen
+        def newEnemyPlacement():
+            side = random.randint(0,5)
+            placement = [0,0]
+            if(side == 1):
+                placement[0] = random.randint(0, 750)
+                placement[1] = 0
+            elif(side == 2):
+                placement[0] = 0
+                placement[1] = random.randint(0, 500)
+            elif(side == 3):
+                placement[0] = random.randint(0, 750)
+                placement[1] = 500
+            elif(side == 4):
+                placement[0] = 750
+                placement[1] = random.randint(0, 500)
+            return placement
+        # Add new enemy randomly until max number of enemies
+        if(random.randint(0,10) == 5):
+            if(enemy_size < score%10 + 3):
+                newEnemy = Enemy()
+                placement = newEnemyPlacement()
+                newEnemy.rect.x = placement[0]
+                newEnemy.rect.y = placement[1]
+                enemy_list.add(newEnemy)
+                enemy_size += 1
 
-        # another way to move rects
-        enemy.rect.x += enemy_speed[0]
-        enemy.rect.y += enemy_speed[1]
+        # Get direction for enemy movement and move enemy
+        def Tracking(enemy, player):
+            speed = [0,0]
+            speed[0] = -(enemy.rect.centerx - player.rect.centerx)
+            speed[1] = -(enemy.rect.centery - player.rect.centery)
+            dist = math.hypot(speed[0], speed[1])
+            speed[0] /= dist
+            speed[1] /= dist
+            enemy.rect.x += speed[0]*2
+            enemy.rect.y += speed[1]*2
+
+        # Call function to move each enemy
+        for enemy in enemy_list:
+            # Track player
+            Tracking(enemy, player)
+
 
         for bullet in bullet_list:
             if(bullet.rect.left < 0 or bullet.rect.right > screen_width):
@@ -257,14 +296,11 @@ def event_loop():
             bullet.rect.x += bullet.speed[0]
             bullet.rect.y += bullet.speed[1]
 
-        # detect all collisions between the player and enemy
-        # but don't remove enemy after collisions
-        # increment score if there was a collision
-        for e in enemy_list:
-            if pygame.sprite.spritecollide(e, bullet_list, False):
-                score += 1
-                enemy_list.remove(e)
-
+        # detect all collisions
+        if pygame.sprite.groupcollide(enemy_list, bullet_list, True, True, False):
+            score += 1
+            enemy_size -= 1
+            bullet_size -= 1
 
         if pygame.sprite.spritecollide(player, bullet_list, False):
             player.death(score)
