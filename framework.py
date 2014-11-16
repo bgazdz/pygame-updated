@@ -203,23 +203,23 @@ def event_loop():
                 #player.fire()
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_a:
                     player.left()
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_d:
                     player.right()
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_w:
                     player.up()
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_s:
                     player.down()
 
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_a:
                     player.right()
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_d:
                     player.left()
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_w:
                     player.down()
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_s:
                     player.up()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
