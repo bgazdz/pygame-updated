@@ -2,6 +2,8 @@ WASD controls movement
 
 mouse controls aiming and shooting
 
+High scores listed under High Score
+
 
 ALL BULLETS Ricochet
 
