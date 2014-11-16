@@ -2,9 +2,28 @@ import sys
 import os
 import math
 import vector
+import pygame
 from menu import *
 # Global Bullet list
 bullet_list = pygame.sprite.Group()
+
+
+#For movement between Menu, game, and death screens
+class GameEngine:
+    def __init__(self):
+        # initialize pygame
+        pygame.init()
+        # create the window
+        size = width, height = 718, 480
+        screen = pygame.display.set_mode(size)
+
+        # set the window title
+        pygame.display.set_caption("Rico-ja")
+        states = [main(), event_loop(), game_over()]
+
+    def run(self):
+        while(True):
+            main()
 
 class Player(pygame.sprite.Sprite):
     # constructor for this class
@@ -54,6 +73,8 @@ class Player(pygame.sprite.Sprite):
         bullet.speed[1] = math.sin(self.angle)*bullet.base_speed
         bullet_list.add(bullet)
 
+    def death(self, score):
+        game_over(score)
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
@@ -76,6 +97,44 @@ class Bullet(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
 
+
+# Game Over loop
+def game_over(score):
+    bullet_list.empty()
+    screen = pygame.display.get_surface()
+    screen_rect = screen.get_rect()
+    screen_width = screen.get_width()
+    screen_height = screen.get_height()
+    # set up font
+    basic_font = pygame.font.SysFont(None, 48)
+    # initialize a clock
+    clock = pygame.time.Clock()
+
+    #Death Loop
+    while 1:
+        # handle input
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    screen.fill((0, 0, 0))
+                    pygame.display.flip()
+                    main()
+
+        death = pygame.image.load(os.path.join('images', 'death_screen.png'))
+        screen.blit(death, [0, 0])
+
+        # set up the score text
+        text = basic_font.render('Score: %d' % score, True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.x = screen_rect.x
+        text_rect.y = screen_rect.y
+        screen.blit(text, text_rect)
+        # update the screen
+        pygame.display.flip()
+
 def event_loop():
     # get the pygame screen and create some local vars
     screen = pygame.display.get_surface()
@@ -86,8 +145,10 @@ def event_loop():
     basic_font = pygame.font.SysFont(None, 48)
     # initialize a clock
     clock = pygame.time.Clock()
-    # initialize the score counter
+
+    # initialize score
     score = 0
+
     # initialize the enemy speed
     enemy_speed = [6, 6]
 
@@ -113,10 +174,10 @@ def event_loop():
                 sys.exit()
 
             #Mouse input controls
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEMOTION:
                 # rotate the player to face the mouse
                 player.rotate(event.pos)
-                player.fire()
+                #player.fire()
 
                 
             elif event.type == pygame.KEYDOWN:
@@ -139,8 +200,8 @@ def event_loop():
                 elif event.key == pygame.K_DOWN:
                     player.up()
 
-            #elif event.type == pygame.MOUSEBUTTONDOWN:
-            #    player.fire()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                player.fire()
 
         # call the move function for the player
         player.move()
@@ -180,6 +241,8 @@ def event_loop():
         if pygame.sprite.spritecollide(player, enemy_list, False):
             score += 1
 
+        if pygame.sprite.spritecollide(player, bullet_list, False):
+            player.death(score)
         #draw_background define
         def draw_background(background, x, y):
             screen.blit(background, [x, y])
@@ -223,7 +286,7 @@ def main():
     # create the menu
     menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
                  [('Start Game', 1, None),
-                  ('Other Option', 2, None),
+                  ('High Score', 2, None),
                   ('Exit', 3, None)])
     # center the menu
     menu.set_center(True, True)
@@ -234,10 +297,13 @@ def main():
     prev_state = 1
 
     # ignore mouse and only update certain rects for efficiency
-    pygame.event.set_blocked(pygame.MOUSEMOTION)
+    #pygame.event.set_blocked(pygame.MOUSEMOTION)
     rect_list = []
 
+    #pygame.display.update(rect_list)
+
     while 1:
+        pygame.display.set_caption("Rico-ja")
         # check if the state has changed, if it has, then post a user event to
         # the queue to force the menu to be shown at least once
         if prev_state != state:
@@ -257,7 +323,7 @@ def main():
                 event_loop()
             elif state == 2:
                 # just to demonstrate how to make other options
-                pygame.display.set_caption("y u touch this")
+                pygame.display.set_caption("High Scores")
                 state = 0
             else:
                 # exit the game and program
@@ -274,4 +340,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    GameEngine()
