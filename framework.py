@@ -92,7 +92,7 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         # load the PNG
-        self.image = pygame.image.load(os.path.join('images', 'ball.png'))
+        self.image = pygame.image.load(os.path.join('images', 'ninja.png'))
         self.rect = self.image.get_rect()
         self.rect.topleft = 0, 0
 
@@ -297,7 +297,7 @@ def event_loop():
             bullet.rect.y += bullet.speed[1]
 
         # detect all collisions
-        if pygame.sprite.groupcollide(enemy_list, bullet_list, True, True, False):
+        if pygame.sprite.groupcollide(enemy_list, bullet_list, True, True, None):
             score += 1
             enemy_size -= 1
             bullet_size -= 1
