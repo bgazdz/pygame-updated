@@ -232,22 +232,29 @@ def game_over():
     screen_rect = screen.get_rect()
     screen_width = screen.get_width()
     screen_height = screen.get_height()
+    global enemy_count
+    enemy_count = 0
+    global bullet_size
+    bullet_size = 0
     # set up font
     basic_font = pygame.font.SysFont(None, 48)
     # initialize a clock
     clock = pygame.time.Clock()
-    new_high_score()
     #Death Loop
     while 1:
         # handle input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+		new_high_score()
+		score = 0
                 sys.exit()
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     screen.fill((0, 0, 0))
                     pygame.display.flip()
+		    new_high_score()
+                    score = 0
                     main()
 
         death = pygame.image.load(os.path.join('images', 'death_screen.png'))
@@ -305,6 +312,7 @@ def event_loop():
 
     # initialize score
     global score
+    score = 0
     global enemy_count
 
     # Global bullet_size
