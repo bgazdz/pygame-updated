@@ -5,11 +5,17 @@ The original Rico-Ja was made at the Fall 2014 GameBuilders game-build-a-thon at
 
 This update will include:
 Enemy collisions:
+
 New map to deal with off-screen enemies killing you:
+
 Health bar:
+
 More weapons:
+
 Tutorial: (Currently must read readme.txt)
+
 More enemies:
+
 
 Usage
 -----
