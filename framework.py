@@ -3,7 +3,6 @@ import os
 import math
 import vector
 import random
-import os
 random.seed()
 from menu import *
 # Global Bullet list
@@ -51,26 +50,28 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = 718/2
         self.rect.y = 240
         self.speed = [0, 0]
+        self.health = 100
 
         #starts facing east
         self.angle = 0
         self.face_vector = [1, 0]
 
     def left(self):
-        self.speed[0] -= 8
+        self.speed[0] -= 10
 
     def right(self):
-        self.speed[0] += 8
+        self.speed[0] += 10
 
     def up(self):
-        self.speed[1] -= 8
+        self.speed[1] -= 10
 
     def down(self):
-        self.speed[1] += 8
+        self.speed[1] += 10
 
     def move(self):
         # move the rect by the displacement ("speed")
-        self.rect = self.rect.move(self.speed)
+        self.rect.x += self.speed[0]*self.health/100 * (1 + .25 * score / 25)
+        self.rect.y += self.speed[1]*self.health/100 * (1 + .25 * score / 25)
 
     def rotate(self, mouse_location):
         # get the mouse location
@@ -93,6 +94,18 @@ class Player(pygame.sprite.Sprite):
             bullet_list.add(bullet)
             bullet_size += 1
 
+    #lose 10 health upon enemy hit
+    def lose_health_enemy(self):
+        self.health -= 10
+        if(self.health <= 0) :
+            self.death()
+
+    #lose 25 health upon bullet hit
+    def lose_health_bullet(self):
+        self.health -= 25
+        if(self.health <= 0) :
+            self.death()
+
     def death(self):
         game_over()
 
@@ -114,7 +127,7 @@ class Player(pygame.sprite.Sprite):
         basic_font = pygame.font.SysFont(None, 100)
         text = basic_font.render('BOOM!', True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.x = 300
+        text_rect.x = 200
         text_rect.y = 200
 
         # draw the text onto the surface
@@ -146,7 +159,7 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.Surface([10, 10])
         self.image.fill(WHITE)
         self.speed = [0,0]
-        self.base_speed = 10
+        self.base_speed = 20
         self.rect = self.image.get_rect()
 
     @staticmethod
@@ -175,8 +188,8 @@ class Shovel(pygame.sprite.Sprite):
         # load the PNG
         self.image = pygame.image.load(os.path.join('images', 'shovel.png'))
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, 718)
-        self.rect.y = random.randint(0, 480)
+        self.rect.x = random.randint(0, 700)
+        self.rect.y = random.randint(0, 450)
 
 def read_high_scores():
     if not os.path.isfile('high_scores'):
@@ -187,8 +200,8 @@ def read_high_scores():
 
     f = open('high_scores', 'r')
     scores = []
-    for score in f.readlines():
-        scores.append(score)
+    for s in f.readlines():
+        scores.append(s)
     f.close()
     return scores
 
@@ -245,22 +258,22 @@ def game_over():
         # handle input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-		new_high_score()
-		score = 0
+                new_high_score()
+                score = 0
                 sys.exit()
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     screen.fill((0, 0, 0))
                     pygame.display.flip()
-		    new_high_score()
+                    new_high_score()
                     score = 0
                     main()
 
         death = pygame.image.load(os.path.join('images', 'death_screen.png'))
         screen.blit(death, [0, 0])
 
-        # set up the score text
+        # Keep showing score text
         text = basic_font.render('Score: %d' % score, True, (255, 255, 255))
         text_rect = text.get_rect()
         text_rect.x = screen_rect.x
@@ -403,7 +416,7 @@ def event_loop():
             return placement
         # Add new enemy randomly until max number of enemies
         if(random.randint(0,10) == 5):
-            if(enemy_count < score%10 + 3):
+            if(enemy_count < score/10 + 3):
                 newEnemy = Enemy()
                 placement = newEnemyPlacement()
                 newEnemy.rect.x = placement[0]
@@ -417,25 +430,62 @@ def event_loop():
             speed[0] = -(enemy.rect.centerx - player.rect.centerx)
             speed[1] = -(enemy.rect.centery - player.rect.centery)
             dist = math.hypot(speed[0], speed[1])
-            speed[0] /= dist
-            speed[1] /= dist
-            enemy.rect.x += speed[0]*2
-            enemy.rect.y += speed[1]*2
+            no_move_x = 0
+            no_move_y = 0
+            #Enemy collision detector
+            for e in enemy_list :
+                if(e != enemy) :
+                    collision = check_collision(enemy, e)
+                    if collision == 1 :
+                        if(abs((enemy.rect.centerx - player.rect.centerx)) >= abs((e.rect.centerx - player.rect.centerx)) ):
+                            no_move_x = 1
+                    elif collision == 2 :
+                        if(abs((enemy.rect.centery - player.rect.centery)) >= abs((e.rect.centery - player.rect.centery)) ):
+                            no_move_y = 1
+                    elif collision == 3 :
+                        if(abs((enemy.rect.centerx - player.rect.centerx)) >= abs((e.rect.centerx - player.rect.centerx)) ):
+                            no_move_y = 1
+                        if(abs((enemy.rect.centery - player.rect.centery)) >= abs((e.rect.centery - player.rect.centery)) ):
+                            no_move_x = 1
+            if no_move_x == 0 :
+                enemy.rect.x += (speed[0]*2/dist) * (1 + .25 * score / 25)
+            if no_move_y == 0 :
+                enemy.rect.y += (speed[1]*2/dist) * (1 + .25 * score / 25)
+
+        #Checks for enemy collisions between single enemies
+        #Returns
+        # 0 - No collision
+        # 1 - collision in X
+        # 2 - collision in Y
+        # 3 - collision in both X and Y
+        def check_collision(enemy, e):
+            x_dif = abs(enemy.rect.centerx - e.rect.centerx)
+            y_dif = abs(enemy.rect.centery - e.rect.centery)
+            length = abs(enemy.rect.x - enemy.rect.centerx)
+            width = abs(enemy.rect.y - enemy.rect.centery)
+            if(x_dif < length) :
+                if y_dif < width :
+                    return 3
+                return 1
+            if(y_dif < width) :
+                return 2
+            return 0
+
 
         # Call function to move each enemy
         for enemy in enemy_list:
             # Track player
             Tracking(enemy, player)
 
-
+        # Bullet bounce check
         for bullet in bullet_list:
             if bullet.rect.left < 0 or bullet.rect.right > screen_width :
                 bullet.speed[0] = -bullet.speed[0]
             if bullet.rect.top < 0 or bullet.rect.bottom > screen_height :
                 bullet.speed[1] = -bullet.speed[1]
             #Move Bullet
-            bullet.rect.x += bullet.speed[0]
-            bullet.rect.y += bullet.speed[1]
+            bullet.rect.x += bullet.speed[0] * (1 + .25 * score / 25)
+            bullet.rect.y += bullet.speed[1] * (1 + .25 * score / 25)
 
 
         # detect all collisions
@@ -444,11 +494,13 @@ def event_loop():
             enemy_count -= 1
             bullet_size -= 1
 
-        if pygame.sprite.spritecollide(player, bullet_list, False):
-            player.death()
+        if pygame.sprite.spritecollide(player, bullet_list, True):
+            bullet_size -= 1
+            player.lose_health_bullet()
 
-        if pygame.sprite.spritecollide(player, enemy_list, False):
-            player.death()
+        if pygame.sprite.spritecollide(player, enemy_list, True):
+            enemy_count -= 1
+            player.lose_health_enemy()
 
         if pygame.sprite.spritecollide(player, shovel_list, False):
             player.shovel()
@@ -468,7 +520,6 @@ def event_loop():
             screen.blit(background, [x, y])
 
         # draw background
-        # screen.fill((0, 0, 0))
         background = pygame.image.load(os.path.join('images', 'ground.png'))
         draw_background(background, 0, 0)
 
@@ -478,8 +529,14 @@ def event_loop():
         text_rect.x = screen_rect.x
         text_rect.y = screen_rect.y
 
+        life = basic_font.render('Health: %d' % player.health, True, (255, 255, 255))
+        life_rect = life.get_rect()
+        life_rect.x =  screen_rect.x
+        life_rect.y = screen_rect.y + screen_height - 30
+
         # draw the text onto the surface
         screen.blit(text, text_rect)
+        screen.blit(life, life_rect)
 
         # draw the player and enemy sprites to the screen
         sprite_list.draw(screen)
@@ -493,6 +550,36 @@ def event_loop():
         # limit to 45 FPS
         clock.tick(45)
 
+def tutorial():
+
+    global screen
+
+    ground = pygame.image.load(os.path.join('images', 'ground.png'))
+    screen.blit(ground, [0, 0])
+
+    #Movement controls
+    while(True) :
+        screen.blit(ground, [0, 0])
+        text = basic_font.render('Welcome to the tutorial', True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.x = screen_rect.centerx
+        text_rect.y = screen_rect.centery
+
+        text2 = basic_font.render('Press any button to continue', True, (255, 255, 255))
+        text2_rect = text2.get_rect()
+        text2_rect.x = screen_rect.centerx
+        text2_rect.y = screen_rect.centery + 30
+
+        # draw the text onto the surface
+        screen.blit(text, text_rect)
+        screen.blit(text2, text2_rect)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+            #Mouse input controls
+            elif event.type == pygame.KEYDOWN:
+                break
 
 def main():
     # initialize pygame
@@ -508,6 +595,7 @@ def main():
     # create the menu
     menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
                  [('Start Game', 1, None),
+                  #('Tutorial', 2, None),
                   ('High Score', 2, None),
                   ('Exit', 3, None)])
     # center the menu
@@ -537,13 +625,22 @@ def main():
         e = pygame.event.wait()
 
         # update the menu
-        if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
+        if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE or e.type == pygame.QUIT:
+
+            # quit if the user closes the window
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
             if state == 0:
                 # "default" state
                 rect_list, state = menu.update(e, state)
             elif state == 1:
                 # start the game
                 event_loop()
+            #elif state == 2:
+            #    tutorial()
+            #    state = 0
             elif state == 2:
                 if not high_scores_displayed:
                     display_high_scores()
@@ -554,13 +651,9 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-            # quit if the user closes the window
-            if e.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
             # update the screen
             pygame.display.update(rect_list)
+
 
 
 if __name__ == '__main__':

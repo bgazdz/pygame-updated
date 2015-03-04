@@ -600,12 +600,12 @@ class cMenu:
       s = self.selection
       n = self.change_number
 
-      if e.key == pygame.K_DOWN:
+      if e.key == pygame.K_s:
          if (o == 'vertical') and ((s + 1) % n != 0):
             self.selection += 1
          elif o == 'horizontal':
             self.selection += n
-      elif e.key == pygame.K_UP:
+      elif e.key == pygame.K_w:
          if (o == 'vertical') and ((s) % n != 0):
             self.selection -= 1
          elif o == 'horizontal':

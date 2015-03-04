@@ -4,11 +4,13 @@ This is the updated version of Rico-Ja (known as pygame-topdown-framework reposi
 The original Rico-Ja was made at the Fall 2014 GameBuilders game-build-a-thon at UIUC.
 
 This update will include:
-Enemy collisions:
+Enemy collisions: Added
 
-New map to deal with off-screen enemies killing you:
+New map to deal with off-screen enemies killing you: 
 
-Health bar:
+Health bar: Added 
+Bonus: slower movement for less health 
+Bonus: faster movement for everyone/everything every 25 points
 
 More weapons:
 
