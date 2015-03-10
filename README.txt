@@ -1,9 +1,9 @@
 Information:
 Rico-Ja was created by Robert Gazdziak and Thomas Lesniak for the Fall 2014 UIUC ACM GameBuilders
 game buildathon. The game had to be top-down, no code could be created before the event started,
-and the theme that was revealed at the start of the competition was YOLO (You Only Live Once).
+and the theme that was revealed at the start of the competition was YOLO One Life Only.
 
-This game was created and completed in the 12-hour time limit.
+This game was created and completed in the 12-hour time limit. Updates have been added as listed on the GitHub README.md
 
 
 Controls:
@@ -31,10 +31,13 @@ ALL BULLETS Ricochet
 
 Enemies spawn offscreen and move on screen (beware being along the edges of the screen)
 
-Enemies and bullets kill you by touching you once
+Enemies do 10 damage to you
+
+Bullets deal 25 damage to you
+
+The less health you have the slower you move
 
 Shovel wipes all enemies and bullets
 
-Bullets don't disappear until they hit you or an enemy
+Bullets don't disappear until they hit you or an enemy (or are wiped by a shovel)
 
-Didn't have time to make enemy collisions, so enemie sprites can be under other enemy sprites
